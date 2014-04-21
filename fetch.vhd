@@ -8,6 +8,7 @@ entity fetch is
 			reset:	 			in 	std_logic;
 			readIn:				in 	std_logic_vector(31 downto 0);
 			EnabledFetch:		in 	std_logic;
+			RequestFetch:		in 	std_logic;
 			Branched:			in  std_logic;
 			BranchLocation:		in  std_logic_vector(31 downto 0);
 			programCounter:		out std_logic_vector(31 downto 0):=std_logic_vector(to_unsigned(0,32));
@@ -17,7 +18,8 @@ end entity ; -- Fetch
 
 architecture arch of fetch is
 
-	signal			counter:			std_logic_vector(31 downto 0);
+	signal			PCounter:			std_logic_vector(31 downto 0);
+	signal			CacheCounter:		integer						:=0 ;
 	signal 			state:				std_logic_vector(2 downto 0):="111";		
 	constant		waiting:			std_logic_vector(2 downto 0):="000";
 	constant		resetMode:			std_logic_vector(2 downto 0):="111";
@@ -36,20 +38,29 @@ begin
 			
 
 			if reset = '1' then
-				counter <= std_logic_vector(to_unsigned(0,32));
+				PCounter <= std_logic_vector(to_unsigned(0,32));
 				programCounter <= std_logic_vector(to_unsigned(0,32));
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
+				Cache <=((others=> (others=>'0')));
+				CacheCounter = 0;
 			elsif Branched = '1' then
-				counter <=BranchLocation;
+				PCounter <=BranchLocation;
 				programCounter <= BranchLocation;
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
 			elsif EnabledFetch ='1' then
-				programCounter <= std_logic_vector(unsigned(counter)+to_unsigned(1,32));
-				counter <= std_logic_vector(unsigned(counter)+to_unsigned(1,32));
-				nextInstruction	<= instructionCache(0);
-				instructionCache(14 downto 0) <= instructionCache(15 downto 1);
-				instructionCache(15) <= readIn;
-					
+				if (RequestFetch ='1') then
+					programCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
+					PCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
+					nextInstruction	<= instructionCache(0);
+					instructionCache(CacheCounter-1 downto 0) <= instructionCache(CacheCounter downto 1);
+					instructionCache(CacheCounter) <= readIn;	
+				elsif CacheCounter<16 then
+					programCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
+					PCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
+					CacheCounter = CacheCounter + 1;
+					instructionCache(CacheCounter) <=readIn;
+				end if;
+				
 			end if ;
 
 		end if ;
