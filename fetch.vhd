@@ -41,12 +41,14 @@ begin
 				PCounter <= std_logic_vector(to_unsigned(0,32));
 				programCounter <= std_logic_vector(to_unsigned(0,32));
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
-				Cache <=((others=> (others=>'0')));
-				CacheCounter = 0;
+				instructionCache <=(others=> (others=>'0'));
+				CacheCounter <= 0;
 			elsif Branched = '1' then
 				PCounter <=BranchLocation;
 				programCounter <= BranchLocation;
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
+				instructionCache <=(others=> (others=>'0'));
+				CacheCounter <= 0;
 			elsif EnabledFetch ='1' then
 				if (RequestFetch ='1') then
 					programCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
@@ -57,7 +59,7 @@ begin
 				elsif CacheCounter<16 then
 					programCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
 					PCounter <= std_logic_vector(unsigned(PCounter)+to_unsigned(1,32));
-					CacheCounter = CacheCounter + 1;
+					CacheCounter <= CacheCounter + 1;
 					instructionCache(CacheCounter) <=readIn;
 				end if;
 				
