@@ -215,7 +215,6 @@ pip-log.txt
 .mr.developer.cfg
 
 
-#modelsim and quartus
 *.mti
 *.mpf
 *.dat
@@ -227,3 +226,44 @@ pip-log.txt
 _info
 _vmake
 transcript
+*.idb
+*.kpt
+*.hdb
+*.bpm
+*.qsf
+*.db_info
+*.txt
+*.qmsg
+*.sci
+*.rdb
+*.ddb
+*.tmw_info
+*.cdb
+*.xml
+*.logdb
+*.hier_info
+*.qpf
+*.hif
+*.ipinfo
+*.ammdb
+*.tdb
+*.flock
+*.dpf
+*.sig
+*.info
+*.cdf
+*.rpt
+*.smsg
+*.summary
+*.pin
+*.pof
+*.jdi
+*.sof
+*.done
+*.hb_info
+*.dpi
+*.rcfdb
+*.dfp
+*.syn_hier_info
+*.html
+README
