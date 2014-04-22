@@ -4,20 +4,21 @@ use ieee.numeric_std.all;
 
 entity decode is
   port (
-	clock 				: 	in std_logic;
-	reset 				: 	in std_logic;
-	nextInstruction		:	in std_logic_vector(31 downto 0);
+	clock 				: 	in 	std_logic;
+	reset 				: 	in 	std_logic;
+	nextInstruction		:	in 	std_logic_vector(31 downto 0);
+
+	RequestUpdate		:	in 	std_logic;
+	UpdateRegister		:	in 	std_logic_vector(4 downto 0);
+	UpdateRegValue		:	in 	std_logic_vector(31 downto 0);
 
 	RequestFetch		: 	out std_logic;
 	HoldValue 			:	out std_logic;
-	Branching			:	out	std_logic;
-	BranchingAddress	:	out	std_logic_vector(31 downto 0);
+
 	mode				:	out	std_logic_vector(4 downto 0);
-	address1			:	out	std_logic_vector(4 downto 0);
-	address2 			:	out	std_logic_vector(4 downto 0);
-	address3			:	out	std_logic_vector(4 downto 0);
-	value1 				:	out	std_logic_vector(21 downto 0);
-	value2				:	out	std_logic_vector(26 downto 0)
+	value1 				:	out	std_logic_vector(31 downto 0);
+	value2				:	out	std_logic_vector(31 downto 0);
+	value3				:	out	std_logic_vector(31 downto 0)
   ) ;
 end entity ; -- decode :
 
@@ -61,57 +62,89 @@ architecture arch of decode is
 
 
 
-	signal Operation	 :		std_logic_vector(4 downto 0) :="00000";
-
+	signal 			Operation:			std_logic_vector(4 downto 0) :="00000";
+	type 			ArrayData			is array (31 downto 0 ) of std_logic_vector(31 downto 0);
+	signal			GPR:				ArrayData;
+	type			IntegerArray		is array (5 downto 0) of integer;
+	type 			tempIntegerArray	is array (1 downto 0) of integer;
+	signal			ListOfUsedReg:		IntegerArray;
+	signal 			tempList:			tempIntegerArray;
 begin
 	process( clock )
 	begin
 		
 		if rising_edge(clock) then
-			Operation <= nextInstruction(31:27);
-			mode <= Operation;
-			case( Operation ) is
-					
-				when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE|SWP =>
-					address1  	=	nextInstruction(26:22);
-					address2  	=	nextInstruction(21:17);
-					address3  	=	"00000";
-					Value1  	=	std_logic_vector(to_unsigned(0,22));
-					Value2  	=	std_logic_vector(to_unsigned(0,27));
-				when ADDI|SUBI|MUTI|ORI|WRT|ANDI 	=>
-					address1  	=	nextInstruction(26:22);
-					address2  	=	"00000";
-					address3  	=	"00000";
-					Value1  	=	nextInstruction(21:0);
-					Value2  	=	std_logic_vector(to_unsigned(0,27));
-				when INC|DEC|SHL|SHR|NT|BRH 	=>
-					address1  	=	nextInstruction(26:22);
-					address2  	=	"00000";
-					address3  	=	"00000";
-					Value1  	=	std_logic_vector(to_unsigned(0,22));
-					Value2  	=	std_logic_vector(to_unsigned(0,27));
-				when BEQ|BNE =>
-					address1  	=	nextInstruction(26:22);
-					address2  	=	nextInstruction(21:17);
-					address3  	=	nextInstruction(16:12);
-					Value1  	=	std_logic_vector(to_unsigned(0,22));
-					Value2  	=	std_logic_vector(to_unsigned(0,27));
-				when INT 	=>
-					address1  	=	"00000";
-					address2  	=	"00000";
-					address3  	=	"00000";
-					Value1  	=	std_logic_vector(to_unsigned(0,22));
-					Value2  	=	nextInstruction(26:0);
-				when others =>
-					mode <= NOP;
-					address1  	=	"00000";
-					address2  	=	"00000";
-					address3  	=	"00000";
-					Value1  	=	std_logic_vector(to_unsigned(0,22));
-					Value2  	=	std_logic_vector(to_unsigned(0,27));
-
+			if reset = '1' then
+				value1 		<=	std_logic_vector(to_unsigned(0,32));
+				value2 		<=	std_logic_vector(to_unsigned(0,32));
+				value3 		<=	std_logic_vector(to_unsigned(0,32));
+				RequestFetch<= '0';
+				HoldValue	<= '0';
+				GPR 		<=	(others=> (others=>'0'));
+				ListOfUsedReg<= (others=> 0);
+				tempList 	<=	(others=> 0);
+			else
+				RequestFetch <= '1';
+				if RequestUpdate = '1' then
+					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;
+				end if ;
+				Operation <= nextInstruction(31 downto 27);
+				mode <= Operation;
+				tempList(0) <= -1;
+				tempList(1) <= -1;
+				case( Operation ) is
 						
-			end case ;			
+					when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE|SWP =>
+						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
+						value2 		<=	GPR(to_integer(unsigned(nextInstruction(21 downto 17))));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
+						tempList(1) <=	to_integer(unsigned(nextInstruction(21 downto 17)));
+
+
+					when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
+						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
+						value2 		<=	std_logic_vector(to_unsigned(0,32)+unsigned(nextInstruction(21 downto 0)));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
+
+					when INC|DEC|SHL|SHR|NT|BRH 	=>
+						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
+						value2 		<=	std_logic_vector(to_unsigned(0,32));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
+
+					when BEQ|BNE =>
+						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
+						value2 		<=	GPR(to_integer(unsigned(nextInstruction(21 downto 17))));
+						value3 		<=	GPR(to_integer(unsigned(nextInstruction(16 downto 12))));
+					when INT =>
+						value1 		<=	std_logic_vector(to_unsigned(0,32));
+						value2 		<=	std_logic_vector(to_unsigned(0,32));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+					when others =>
+						mode <= NOP;
+						value1 		<=	std_logic_vector(to_unsigned(0,32));
+						value2 		<=	std_logic_vector(to_unsigned(0,32));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+							
+				end case ;			
+				-- detection for conflict here, check and store a list of address required
+				-- for the current and previous 2 operations
+				-- only matter for operation on data manipulations
+				-- exluded ops: NOP, BEQ,BRH ,BNE, INT
+				 for i in 0 to 5 loop
+						for j in 0 to 1 loop
+							if tempList(j) = ListOfUsedReg(i) then
+								RequestFetch<='0';
+								mode <=NOP;
+							end if ;
+						end loop ; -- identifier
+				end loop ; -- checkList	
+				ListOfUsedReg(3 downto 0) <= ListOfUsedReg(5 downto 2);
+				ListOfUsedReg(5) <= tempList(0);
+				ListOfUsedReg(4) <= tempList(1);
+			end if ;
 
 
 
