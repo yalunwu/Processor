@@ -4,7 +4,18 @@ use ieee.numeric_std.all;
 
 entity execute is
   port (
-	clock
+	clock				: 	in 	std_logic;
+	reset 				: 	in 	std_logic;
+	mode				:	in	std_logic_vector(4 downto 0);
+	address1			:	in	std_logic_vector(4 downto 0);
+	address2 			:	in	std_logic_vector(4 downto 0);
+	address3			:	in	std_logic_vector(4 downto 0);
+	value1 				:	in	std_logic_vector(21 downto 0);
+	value2				:	in	std_logic_vector(26 downto 0);
+
+
+	Branching			:	out	std_logic;
+	BranchingAddress	:	out	std_logic_vector(31 downto 0)
   ) ;
 end entity ; -- Execute
 

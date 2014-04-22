@@ -6,11 +6,13 @@ entity fetch is
   port (
 			clock: 				in 	std_logic;
 			reset:	 			in 	std_logic;
-			readIn:				in 	std_logic_vector(31 downto 0);
 			EnabledFetch:		in 	std_logic;
 			RequestFetch:		in 	std_logic;
 			Branched:			in  std_logic;
+			readIn:				in 	std_logic_vector(31 downto 0);
 			BranchLocation:		in  std_logic_vector(31 downto 0);
+
+
 			programCounter:		out std_logic_vector(31 downto 0):=std_logic_vector(to_unsigned(0,32));
 			nextInstruction:	out std_logic_vector(31 downto 0):=std_logic_vector(to_unsigned(0,32))
   ) ;

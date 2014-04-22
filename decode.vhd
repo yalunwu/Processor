@@ -6,13 +6,18 @@ entity decode is
   port (
 	clock 				: 	in std_logic;
 	reset 				: 	in std_logic;
-	EnabledFetch		: 	out std_logic;
 	nextInstruction		:	in std_logic_vector(31 downto 0);
+
+	RequestFetch		: 	out std_logic;
+	HoldValue 			:	out std_logic;
+	Branching			:	out	std_logic;
+	BranchingAddress	:	out	std_logic_vector(31 downto 0);
 	mode				:	out	std_logic_vector(4 downto 0);
 	address1			:	out	std_logic_vector(4 downto 0);
 	address2 			:	out	std_logic_vector(4 downto 0);
 	address3			:	out	std_logic_vector(4 downto 0);
-	value1 				:	out	std_logic_vector(27 downto 0)
+	value1 				:	out	std_logic_vector(21 downto 0);
+	value2				:	out	std_logic_vector(26 downto 0)
   ) ;
 end entity ; -- decode :
 
@@ -54,10 +59,67 @@ architecture arch of decode is
 	constant BNE :		std_logic_vector(4 downto 0) :="11011";
 	constant INT :		std_logic_vector(4 downto 0) :="11100";
 
+
+
+	signal Operation	 :		std_logic_vector(4 downto 0) :="00000";
+
 begin
-	IR : process( clock )
+	process( clock )
 	begin
 		
+		if rising_edge(clock) then
+			Operation <= nextInstruction(31:27);
+			mode <= Operation;
+			case( Operation ) is
+					
+				when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE|SWP =>
+					address1  	=	nextInstruction(26:22);
+					address2  	=	nextInstruction(21:17);
+					address3  	=	"00000";
+					Value1  	=	std_logic_vector(to_unsigned(0,22));
+					Value2  	=	std_logic_vector(to_unsigned(0,27));
+				when ADDI|SUBI|MUTI|ORI|WRT|ANDI 	=>
+					address1  	=	nextInstruction(26:22);
+					address2  	=	"00000";
+					address3  	=	"00000";
+					Value1  	=	nextInstruction(21:0);
+					Value2  	=	std_logic_vector(to_unsigned(0,27));
+				when INC|DEC|SHL|SHR|NT|BRH 	=>
+					address1  	=	nextInstruction(26:22);
+					address2  	=	"00000";
+					address3  	=	"00000";
+					Value1  	=	std_logic_vector(to_unsigned(0,22));
+					Value2  	=	std_logic_vector(to_unsigned(0,27));
+				when BEQ|BNE =>
+					address1  	=	nextInstruction(26:22);
+					address2  	=	nextInstruction(21:17);
+					address3  	=	nextInstruction(16:12);
+					Value1  	=	std_logic_vector(to_unsigned(0,22));
+					Value2  	=	std_logic_vector(to_unsigned(0,27));
+				when INT 	=>
+					address1  	=	"00000";
+					address2  	=	"00000";
+					address3  	=	"00000";
+					Value1  	=	std_logic_vector(to_unsigned(0,22));
+					Value2  	=	nextInstruction(26:0);
+				when others =>
+					mode <= NOP;
+					address1  	=	"00000";
+					address2  	=	"00000";
+					address3  	=	"00000";
+					Value1  	=	std_logic_vector(to_unsigned(0,22));
+					Value2  	=	std_logic_vector(to_unsigned(0,27));
+
+						
+			end case ;			
+
+
+
+
+
+		end if ;	
 	end process ; -- IR
+
+
 
 end architecture ; -- arch
