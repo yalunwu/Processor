@@ -6,16 +6,22 @@ entity decode is
   port (
 	clock 				: 	in 	std_logic;
 	reset 				: 	in 	std_logic;
-	nextInstruction		:	in 	std_logic_vector(31 downto 0);
+	fetchedInstruction	:	in 	std_logic_vector(31 downto 0);
 
 	RequestUpdate		:	in 	std_logic;
 	UpdateRegister		:	in 	std_logic_vector(4 downto 0);
 	UpdateRegValue		:	in 	std_logic_vector(31 downto 0);
+	RequestUpdate2		:	in 	std_logic;
+	UpdateRegister2		:	in 	std_logic_vector(4 downto 0);
+	UpdateRegValue2		:	in 	std_logic_vector(31 downto 0);
 
 	RequestFetch		: 	out std_logic;
-	HoldValue 			:	out std_logic;
 
+
+	executeIsReady		:	in 	std_logic;
 	mode				:	out	std_logic_vector(4 downto 0);
+	outputAddress		: 	out std_logic_vector(4 downto 0);
+	outputAddress2		: 	out std_logic_vector(4 downto 0);
 	value1 				:	out	std_logic_vector(31 downto 0);
 	value2				:	out	std_logic_vector(31 downto 0);
 	value3				:	out	std_logic_vector(31 downto 0)
@@ -79,45 +85,61 @@ begin
 				value2 		<=	std_logic_vector(to_unsigned(0,32));
 				value3 		<=	std_logic_vector(to_unsigned(0,32));
 				RequestFetch<= '0';
-				HoldValue	<= '0';
+
 				GPR 		<=	(others=> (others=>'0'));
 				ListOfUsedReg<= (others=> 0);
 				tempList 	<=	(others=> 0);
+				outputAddress  <="00000";
+				outputAddress2 <="00000";
 			else
 				RequestFetch <= '1';
 				if RequestUpdate = '1' then
-					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;
+					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;x
 				end if ;
-				Operation <= nextInstruction(31 downto 27);
+				if RequestUpdate2 = '1' then
+					GPR(to_integer(unsigned(UpdateRegister2))) <= UpdateRegValue2;
+				end if ;
+				Operation <= fetchedInstruction(31 downto 27);
 				mode <= Operation;
 				tempList(0) <= -1;
 				tempList(1) <= -1;
+				outputAddress  <="00000";
+				outputAddress2 <="00000";
 				case( Operation ) is
 						
-					when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE|SWP =>
-						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
-						value2 		<=	GPR(to_integer(unsigned(nextInstruction(21 downto 17))));
+					when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
 						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
-						tempList(1) <=	to_integer(unsigned(nextInstruction(21 downto 17)));
-
-
+						outputAddress<=fetchedInstruction(21 downto 17);
+						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+						tempList(1) <=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
+					when SWP =>
+						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+						value3 		<=	std_logic_vector(to_unsigned(0,32));
+						outputAddress<=fetchedInstruction(21 downto 17);
+						outputAddress2<=fetchedInstruction(26 downto 22);
+						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+						tempList(1) <=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
 					when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
-						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
-						value2 		<=	std_logic_vector(to_unsigned(0,32)+unsigned(nextInstruction(21 downto 0)));
+						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+						value2 		<=	std_logic_vector(to_unsigned(0,32)+unsigned(fetchedInstruction(21 downto 0)));
 						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
-
+						outputAddress<=fetchedInstruction(26 downto 22);
+						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+						tempList(1) <=	-1;
 					when INC|DEC|SHL|SHR|NT|BRH 	=>
-						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
+						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
 						value2 		<=	std_logic_vector(to_unsigned(0,32));
 						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						tempList(0) <=	to_integer(unsigned(nextInstruction(26 downto 22)));
-
+						outputAddress<=fetchedInstruction(26 downto 22);
+						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+						tempList(1) <=	-1;
 					when BEQ|BNE =>
-						value1 		<=	GPR(to_integer(unsigned(nextInstruction(26 downto 22))));
-						value2 		<=	GPR(to_integer(unsigned(nextInstruction(21 downto 17))));
-						value3 		<=	GPR(to_integer(unsigned(nextInstruction(16 downto 12))));
+						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+						value3 		<=	GPR(to_integer(unsigned(fetchedInstruction(16 downto 12))));
 					when INT =>
 						value1 		<=	std_logic_vector(to_unsigned(0,32));
 						value2 		<=	std_logic_vector(to_unsigned(0,32));
@@ -145,7 +167,7 @@ begin
 				ListOfUsedReg(5) <= tempList(0);
 				ListOfUsedReg(4) <= tempList(1);
 			end if ;
-
+			--to do: store the previous instruction. 
 
 
 
