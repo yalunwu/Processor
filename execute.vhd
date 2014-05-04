@@ -124,7 +124,11 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						StoreValue	<=std_logic_vector(unsigned(value1)-unsigned(value2));	
+						if unsigned(value2)>unsigned(value1) then
+							StoreValue	<=std_logic_vector(unsigned(value2)-unsigned(value1));
+						else
+							StoreValue 	<=std_logic_vector(to_unsigned(0,32));
+						end if;
 					when MUT|MUTI	=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
@@ -144,7 +148,7 @@ begin
 						if unsigned(value2) = to_unsigned(0,32)  then
 							StoreValue <=std_logic_vector(to_unsigned(0,32));
 						else
-							StoreValue	<=std_logic_vector(unsigned(value1)/unsigned(value2));
+							StoreValue	<=std_logic_vector(unsigned(value2)/unsigned(value1));
 						end if ;
 							
 					when AN|ANDI	=>
@@ -229,9 +233,9 @@ begin
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
 						if unsigned(value1)=to_unsigned(0,32) then
-							StoreValue	<=std_logic_vector(unsigned(value1)-1);
-						else
 							StoreValue	<=std_logic_vector(to_unsigned(0,32));
+						else
+							StoreValue	<=std_logic_vector(unsigned(value1)-1);
 						end if ;
 					when SHL 		=>
 						Branching 	<= 	'0';

@@ -75,7 +75,7 @@ architecture arch of decode is
 	type 			tempIntegerArray	is array (1 downto 0) of integer;
 
 		
-	signal 			WasDisabled:		std_logic;
+	
 begin
 	process( clock,reset,fetchedInstruction )
 	variable ListOfUsedReg:		IntegerArray;
@@ -96,7 +96,7 @@ begin
 				end loop ; -- checkList	
 				tempList(0) :=	-1;
 				tempList(1)	:=	-1;
-				WasDisabled <= 	'0';	
+					
 				mode		<=	"00000";
 				outputAddress  <="00000";
 				outputAddress2 <="00000";
@@ -119,62 +119,13 @@ begin
 					tempList(0) 	:=	-1;
 					tempList(1)		:=	-1;
 					if stallCounter <=0 then
-						WasDisabled <= '0';
 						stalled :='0';
-					elsif stallCounter =1 then
-						mode <= previousInstruction(31 downto 27);
-						case( previousInstruction(31 downto 27) ) is
-							
-							when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
-								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
-								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-								outputAddress<=previousInstruction(21 downto 17);
-								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
-								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
-							when SWP =>
-								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
-								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-								outputAddress<=previousInstruction(21 downto 17);
-								outputAddress2<=previousInstruction(26 downto 22);
-								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
-								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
-							when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
-								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
-								value2 		<=	std_logic_vector(to_unsigned(0,10)) & previousInstruction(21 downto 0);
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-								outputAddress<=previousInstruction(26 downto 22);
-								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
-								tempList(1) :=	-1;
-							when INC|DEC|SHL|SHR|NT|BRH 	=>
-								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
-								value2 		<=	std_logic_vector(to_unsigned(0,32));
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-								outputAddress<=previousInstruction(26 downto 22);
-								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
-								tempList(1) :=	-1;
-							when BEQ|BNE =>
-								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
-								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
-								value3 		<=	GPR(to_integer(unsigned(previousInstruction(16 downto 12))));
-							when INT =>
-								value1 		<=	std_logic_vector(to_unsigned(0,32));
-								value2 		<=	std_logic_vector(to_unsigned(0,32));
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-							when others =>
-								mode <= NOP;
-								value1 		<=	std_logic_vector(to_unsigned(0,32));
-								value2 		<=	std_logic_vector(to_unsigned(0,32));
-								value3 		<=	std_logic_vector(to_unsigned(0,32));
-									
-						end case ;	
 					else
 						mode			<=	"00000";
 						outputAddress  	<=	"00000";
 						outputAddress2 	<=	"00000";
 					end if ;
-					stallCounter := stallCounter -1;
+					stallCounter := stallCounter - 1;
 				else
 					mode <= fetchedInstruction(31 downto 27);
 					RequestFetch <= '1';
@@ -192,7 +143,7 @@ begin
 							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
 							value3 		<=	std_logic_vector(to_unsigned(0,32));
 							outputAddress<=fetchedInstruction(21 downto 17);
-							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(0) :=	-1;
 							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
 						when SWP =>
 							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
@@ -235,18 +186,14 @@ begin
 					-- for the current and previous 2 operations
 					-- only matter for operation on data manipulations
 					-- exluded ops: NOP, BEQ,BRH ,BNE, INT
-					if WasDisabled ='1'then
-						tempList(0) :=	-1;
-						tempList(1) := 	-1;
 						
-					end if ;
+					
 					for i in 0 to storingCycleCount*2-1 loop
 							for j in 0 to 1 loop
 								if tempList(j) = ListOfUsedReg(i) and tempList(j)>=0 then
 									RequestFetch<=	'0';
-									WasDisabled <= 	'1';
 									stalled		:= 	'1';
-									stallCounter:=	i/2+2;
+									stallCounter:=	storingCycleCount;
 									previousInstruction :=fetchedInstruction;
 									mode <=NOP;
 								end if ;
