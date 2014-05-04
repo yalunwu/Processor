@@ -16,6 +16,11 @@ entity memory is
 	StoreValue 			:	in  std_logic_vector(31 downto 0);
 	StoreValue2 		:	in 	std_logic_vector(31 downto 0);
 
+	writebackIsReady	:	in	std_logic;
+
+	RAMHasValue			:	out std_logic;
+	RAMValue			:	out	std_logic_vector(31 downto 0);
+
 	outReg				:	out std_logic;
 	outSwap				:	out std_logic;
 	memoryIsReady		:	out std_logic;
@@ -62,46 +67,49 @@ begin
 		rdaddress 	=>RAMReadAddress,
 		dout 		=>RAMReadData
 		);
-	process( clock, reset )
+	process( clock, reset,RAMReadData )
 	begin
 		if rising_edge(clock) then
 			if reset ='1'then
 				RAMWriteData 	<= 	std_logic_vector(to_unsigned(0,32));
-				RAMReadData 	<= 	std_logic_vector(to_unsigned(0,32));
 				RAMWriteAddress	<= 	std_logic_vector(to_unsigned(0,8));
 				RAMReadAddress 	<= 	std_logic_vector(to_unsigned(0,8));
 				RAMWriteEnable	<= 	'0';
 				RegValue  		<=	std_logic_vector(to_unsigned(0,32));
 				RegValue2 		<= 	std_logic_vector(to_unsigned(0,32));
-			 	RegAddress 		<=	std_logic_vector(to_unsigned(0,8));
-			 	RegAddress2 	<=	std_logic_vector(to_unsigned(0,8));
+			 	RegAddress 		<=	std_logic_vector(to_unsigned(0,5));
+			 	RegAddress2 	<=	std_logic_vector(to_unsigned(0,5));
 			 	outReg 			<=	'0';
 			 	outSwap 		<=	'0';
 			 	memoryIsReady 	<= 	'0';
+			 	RAMHasValue		<= 	'0';
 			else
 				memoryIsReady <= '0';
 				RAMWriteEnable 	<='0';
 				if toLoad = '1' then
 					RAMReadAddress 	<=StoreValue2(7 downto 0);
-					outReg			<='1';
+					RAMHasValue		<='1';
 				elsif toWrite = '1' then
-
+					RAMHasValue		<='0';
 					RAMWriteEnable 	<='1';
 					RAMWriteAddress <=StoreValue2(7 downto 0);
 					RAMWriteData 	<=StoreValue;
 				elsif toReg ='1' then
-					outReg 	<='1';
+					outReg 		<=	'1';
+					RAMHasValue	<=	'0';
+				else
+					outReg		<=	'0';
 				end if ;
 				memoryIsReady <= '1';
 			end if ;
+			outSwap 	<= 	toSwap;
+			RegValue 	<=	StoreValue;
+			RegAddress 	<=	StoreAddress;
+			RegValue2	<=	StoreValue2;
+			RegAddress2 <= 	StoreAddress2;
 
 		end if ;
-		RegValue	<=	RAMReadData;
-		outSwap 	<= 	toSwap;
-		RegValue 	<=	StoreValue;
-		RegAddress 	<=	StoreAddress;
-		RegValue2	<=	StoreValue2;
-		RegAddress2 <= 	StoreAddress2;
+		RAMValue	<=	RAMReadData;
 
 	end process ; -- 
 

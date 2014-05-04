@@ -1,0 +1,5 @@
+force clock 0 0ns, 1 10ns -repeat 20 ns
+force reset 1 -cancel 45ns 
+run 45ns
+force reset 0 
+run 200ns

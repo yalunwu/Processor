@@ -66,106 +66,197 @@ architecture arch of decode is
 	constant BNE :		std_logic_vector(4 downto 0) :="11011";
 	constant INT :		std_logic_vector(4 downto 0) :="11100";
 
-
+	constant storingCycleCount:	integer:=4;
 
 	signal 			Operation:			std_logic_vector(4 downto 0) :="00000";
 	type 			ArrayData			is array (31 downto 0 ) of std_logic_vector(31 downto 0);
 	signal			GPR:				ArrayData;
-	type			IntegerArray		is array (5 downto 0) of integer;
+	type			IntegerArray		is array (storingCycleCount*2-1 downto 0) of integer;
 	type 			tempIntegerArray	is array (1 downto 0) of integer;
-	signal			ListOfUsedReg:		IntegerArray;
-	signal 			tempList:			tempIntegerArray;
+
+		
+	signal 			WasDisabled:		std_logic;
 begin
-	process( clock )
+	process( clock,reset,fetchedInstruction )
+	variable ListOfUsedReg:		IntegerArray;
+	variable tempList:			tempIntegerArray;
+	variable previousInstruction: std_logic_vector(31 downto 0);
+	variable stallCounter:		integer:=0;
+	variable stalled:			std_logic :='0';
 	begin
 		
 		if rising_edge(clock) then
 			if reset = '1' then
-				value1 		<=	std_logic_vector(to_unsigned(0,32));
-				value2 		<=	std_logic_vector(to_unsigned(0,32));
-				value3 		<=	std_logic_vector(to_unsigned(0,32));
+
 				RequestFetch<= '0';
 
 				GPR 		<=	(others=> (others=>'0'));
-				ListOfUsedReg<= (others=> 0);
-				tempList 	<=	(others=> 0);
+				for i in 0 to storingCycleCount*2-1 loop
+					ListOfUsedReg(i) := -1;
+				end loop ; -- checkList	
+				tempList(0) :=	-1;
+				tempList(1)	:=	-1;
+				WasDisabled <= 	'0';	
+				mode		<=	"00000";
 				outputAddress  <="00000";
 				outputAddress2 <="00000";
+				value1 		<=	std_logic_vector(to_unsigned(0,32));
+				value2 		<=	std_logic_vector(to_unsigned(0,32));
+				value3 		<=	std_logic_vector(to_unsigned(0,32));
+				previousInstruction:= std_logic_vector(to_unsigned(0,32));
+				stallCounter:=0;
+				stalled		:='0';
 			else
-				RequestFetch <= '1';
 				if RequestUpdate = '1' then
-					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;x
+					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;
 				end if ;
 				if RequestUpdate2 = '1' then
 					GPR(to_integer(unsigned(UpdateRegister2))) <= UpdateRegValue2;
 				end if ;
-				Operation <= fetchedInstruction(31 downto 27);
-				mode <= Operation;
-				tempList(0) <= -1;
-				tempList(1) <= -1;
-				outputAddress  <="00000";
-				outputAddress2 <="00000";
-				case( Operation ) is
-						
-					when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
-						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
-						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						outputAddress<=fetchedInstruction(21 downto 17);
-						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
-						tempList(1) <=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
-					when SWP =>
-						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
-						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						outputAddress<=fetchedInstruction(21 downto 17);
-						outputAddress2<=fetchedInstruction(26 downto 22);
-						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
-						tempList(1) <=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
-					when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
-						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
-						value2 		<=	std_logic_vector(to_unsigned(0,32)+unsigned(fetchedInstruction(21 downto 0)));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						outputAddress<=fetchedInstruction(26 downto 22);
-						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
-						tempList(1) <=	-1;
-					when INC|DEC|SHL|SHR|NT|BRH 	=>
-						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
-						value2 		<=	std_logic_vector(to_unsigned(0,32));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
-						outputAddress<=fetchedInstruction(26 downto 22);
-						tempList(0) <=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
-						tempList(1) <=	-1;
-					when BEQ|BNE =>
-						value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
-						value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
-						value3 		<=	GPR(to_integer(unsigned(fetchedInstruction(16 downto 12))));
-					when INT =>
-						value1 		<=	std_logic_vector(to_unsigned(0,32));
-						value2 		<=	std_logic_vector(to_unsigned(0,32));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
-					when others =>
-						mode <= NOP;
-						value1 		<=	std_logic_vector(to_unsigned(0,32));
-						value2 		<=	std_logic_vector(to_unsigned(0,32));
-						value3 		<=	std_logic_vector(to_unsigned(0,32));
+				if stalled	='1' then
+					
+
+					tempList(0) 	:=	-1;
+					tempList(1)		:=	-1;
+					if stallCounter <=0 then
+						WasDisabled <= '0';
+						stalled :='0';
+					elsif stallCounter =1 then
+						mode <= previousInstruction(31 downto 27);
+						case( previousInstruction(31 downto 27) ) is
 							
-				end case ;			
-				-- detection for conflict here, check and store a list of address required
-				-- for the current and previous 2 operations
-				-- only matter for operation on data manipulations
-				-- exluded ops: NOP, BEQ,BRH ,BNE, INT
-				 for i in 0 to 5 loop
-						for j in 0 to 1 loop
-							if tempList(j) = ListOfUsedReg(i) then
-								RequestFetch<='0';
-								mode <=NOP;
-							end if ;
-						end loop ; -- identifier
-				end loop ; -- checkList	
-				ListOfUsedReg(3 downto 0) <= ListOfUsedReg(5 downto 2);
-				ListOfUsedReg(5) <= tempList(0);
-				ListOfUsedReg(4) <= tempList(1);
+							when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(21 downto 17);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
+							when SWP =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(21 downto 17);
+								outputAddress2<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
+							when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	std_logic_vector(to_unsigned(0,10)) & previousInstruction(21 downto 0);
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	-1;
+							when INC|DEC|SHL|SHR|NT|BRH 	=>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	-1;
+							when BEQ|BNE =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	GPR(to_integer(unsigned(previousInstruction(16 downto 12))));
+							when INT =>
+								value1 		<=	std_logic_vector(to_unsigned(0,32));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+							when others =>
+								mode <= NOP;
+								value1 		<=	std_logic_vector(to_unsigned(0,32));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+									
+						end case ;	
+					else
+						mode			<=	"00000";
+						outputAddress  	<=	"00000";
+						outputAddress2 	<=	"00000";
+					end if ;
+					stallCounter := stallCounter -1;
+				else
+					mode <= fetchedInstruction(31 downto 27);
+					RequestFetch <= '1';
+
+					Operation <= fetchedInstruction(31 downto 27);
+					
+					tempList(0) := -1;
+					tempList(1) := -1;
+					outputAddress  <="00000";
+					outputAddress2 <="00000";
+					case( fetchedInstruction(31 downto 27) ) is
+							
+						when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+							outputAddress<=fetchedInstruction(21 downto 17);
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
+						when SWP =>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+							outputAddress<=fetchedInstruction(21 downto 17);
+							outputAddress2<=fetchedInstruction(26 downto 22);
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
+						when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	std_logic_vector(to_unsigned(0,10)) & fetchedInstruction(21 downto 0);
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+							outputAddress<=fetchedInstruction(26 downto 22);
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(1) :=	-1;
+						when INC|DEC|SHL|SHR|NT|BRH 	=>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	std_logic_vector(to_unsigned(0,32));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+							outputAddress<=fetchedInstruction(26 downto 22);
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(1) :=	-1;
+						when BEQ|BNE =>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+							value3 		<=	GPR(to_integer(unsigned(fetchedInstruction(16 downto 12))));
+						when INT =>
+							value1 		<=	std_logic_vector(to_unsigned(0,32));
+							value2 		<=	std_logic_vector(to_unsigned(0,32));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+						when others =>
+							mode <= NOP;
+							value1 		<=	std_logic_vector(to_unsigned(0,32));
+							value2 		<=	std_logic_vector(to_unsigned(0,32));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+								
+					end case ;			
+					-- detection for conflict here, check and store a list of address required
+					-- for the current and previous 2 operations
+					-- only matter for operation on data manipulations
+					-- exluded ops: NOP, BEQ,BRH ,BNE, INT
+					if WasDisabled ='1'then
+						tempList(0) :=	-1;
+						tempList(1) := 	-1;
+						
+					end if ;
+					for i in 0 to storingCycleCount*2-1 loop
+							for j in 0 to 1 loop
+								if tempList(j) = ListOfUsedReg(i) and tempList(j)>=0 then
+									RequestFetch<=	'0';
+									WasDisabled <= 	'1';
+									stalled		:= 	'1';
+									stallCounter:=	i/2+2;
+									previousInstruction :=fetchedInstruction;
+									mode <=NOP;
+								end if ;
+							end loop ; -- identifier
+					end loop ; -- checkList	
+
+				end if ;
+				ListOfUsedReg((storingCycleCount*2)-3 downto 0) := ListOfUsedReg((storingCycleCount*2)-1 downto 2);
+				ListOfUsedReg((storingCycleCount*2)-1) := tempList(0);
+				ListOfUsedReg((storingCycleCount*2)-2) := tempList(1);
 			end if ;
 			--to do: store the previous instruction. 
 
@@ -173,6 +264,7 @@ begin
 
 
 		end if ;	
+		
 	end process ; -- IR
 
 

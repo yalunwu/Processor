@@ -11,8 +11,8 @@ entity fetch is
 			Branched:			in  std_logic;
 			BranchLocation:		in  std_logic_vector(31 downto 0);
 
-			flushCache:			out std_logic;
-
+			requestFetch:				in 	std_logic;
+			
 			programCounter:		out std_logic_vector(31 downto 0):=std_logic_vector(to_unsigned(0,32));
 			nextInstruction:	out std_logic_vector(31 downto 0):=std_logic_vector(to_unsigned(0,32))
   ) ;
@@ -20,28 +20,29 @@ end entity ; -- Fetch
 
 architecture arch of fetch is
 
-	signal			PCounter:			unsigned(31 downto 0);
-
+	
+	
 begin
 	
 
 	process(clock,reset)
+	variable			PCounter:			unsigned(31 downto 0);
 	begin
 		if rising_edge(clock) then
 			
-			flushCache <= '0';
 
 			if reset = '1' then
-				PCounter <= to_unsigned(0,32);
-
+				PCounter 		:= to_unsigned(0,32);
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
-
+				
 			elsif Branched = '1' then
-				PCounter <=(unsigned(BranchLocation)-1);
+				PCounter :=(unsigned(BranchLocation)-1);
 				nextInstruction <=std_logic_vector(to_unsigned(0,32));
-				flushCache <= '1';
 			else
-				PCounter <=PCounter+1;
+				if requestFetch = '1' then
+					PCounter := PCounter + 1;
+					nextInstruction<=readIn;
+				end if ;
 
 			end if ;
 			programCounter <=std_logic_vector(PCounter);

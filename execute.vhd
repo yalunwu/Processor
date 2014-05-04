@@ -80,10 +80,17 @@ begin
 		if rising_edge(clock)  then
 			if reset = '1' then
 					Branching 	<= 	'0';
+					BranchingLocation<=std_logic_vector(to_unsigned(0,32));
 					toReg		<=	'0';
 					toWrite		<=	'0';
 					toLoad 		<= 	'0';
 					toSwap		<=	'0';
+					executeIsReady<= '0';
+
+					StoreAddress<= 	std_logic_vector(to_unsigned(0,5));
+					StoreValue 	<=	std_logic_vector(to_unsigned(0,32)); 	
+					StoreAddress2<= std_logic_vector(to_unsigned(0,5));
+					StoreValue2	<=	std_logic_vector(to_unsigned(0,32));
 					tempValue	<=	std_logic_vector(to_unsigned(0,64));
 			else
 				executeIsReady <= '0';
@@ -102,7 +109,7 @@ begin
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
 						StoreValue	<=value1;					
-					when ADD|ANDI	=>
+					when ADD|ADDI	=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
 						toWrite		<=	'0';
@@ -205,7 +212,7 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						StoreValue	<=value1;
+						StoreValue	<=value2;
 					when INC 		=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
@@ -221,7 +228,11 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						StoreValue	<=std_logic_vector(unsigned(value1)-1);
+						if unsigned(value1)=to_unsigned(0,32) then
+							StoreValue	<=std_logic_vector(unsigned(value1)-1);
+						else
+							StoreValue	<=std_logic_vector(to_unsigned(0,32));
+						end if ;
 					when SHL 		=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
@@ -229,8 +240,8 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						tempValue	<=std_logic_vector(unsigned(value1)*to_unsigned(2,32));
-						StoreValue	<=tempValue(31 downto 0);
+						
+						StoreValue	<=value1(30 downto 0) & '0';
 					when SHR 		=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
@@ -238,7 +249,7 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						StoreValue	<=std_logic_vector(unsigned(value1)/2);
+						StoreValue	<='0' & value1(31 downto 1);
 					when NT 		=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';

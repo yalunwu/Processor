@@ -14,6 +14,8 @@ entity writeBack is
 	RegAddress2			:	in	std_logic_vector(4 downto 0);
 	RegValue2			:	in	std_logic_vector(31 downto 0);
 
+	RAMHasValue			:	in	std_logic;
+	RAMValue			:	in	std_logic_vector(31 downto 0);
 
 	writebackIsReady	:	out	std_logic;
 	requestUpdate		:	out	std_logic;
@@ -48,7 +50,12 @@ begin
 				if toReg = '1' then
 					requestUpdate 	<= '1';
 					UpdateRegister 	<=	RegAddress;
-					UpdateRegValue 	<=	RegValue;
+					if RAMHasValue = '1' then
+						UpdateRegValue 	<=	RAMValue;
+					else
+						UpdateRegValue 	<=	RegValue;
+					end if ;
+					
 				elsif toSwap ='1' then
 					requestUpdate 	<= '1';
 					UpdateRegister 	<=	RegAddress;
