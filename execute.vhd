@@ -70,12 +70,13 @@ architecture arch of execute is
 	constant BEQ :		std_logic_vector(4 downto 0) :="11010";
 	constant BNE :		std_logic_vector(4 downto 0) :="11011";
 	constant INT :		std_logic_vector(4 downto 0) :="11100";
-	signal 	tempValue:	std_logic_vector(63 downto 0);
+	
 begin
 
 
 
 	process( clock )
+	variable 	tempValue:	std_logic_vector(63 downto 0);
 	begin
 		if rising_edge(clock)  then
 			if reset = '1' then
@@ -91,7 +92,7 @@ begin
 					StoreValue 	<=	std_logic_vector(to_unsigned(0,32)); 	
 					StoreAddress2<= std_logic_vector(to_unsigned(0,5));
 					StoreValue2	<=	std_logic_vector(to_unsigned(0,32));
-					tempValue	<=	std_logic_vector(to_unsigned(0,64));
+					tempValue	:=	std_logic_vector(to_unsigned(0,64));
 			else
 				executeIsReady <= '0';
 				case( mode ) is
@@ -117,7 +118,7 @@ begin
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
 						StoreValue	<=std_logic_vector(unsigned(value1)+unsigned(value2));	
-					when SUB|SUBI	=>
+					when SUB	=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
 						toWrite		<=	'0';
@@ -129,6 +130,18 @@ begin
 						else
 							StoreValue 	<=std_logic_vector(to_unsigned(0,32));
 						end if;
+					when SUBI	=>
+						Branching 	<= 	'0';
+						toReg		<=	'1';
+						toWrite		<=	'0';
+						toLoad 		<= 	'0';
+						toSwap		<=	'0';
+						StoreAddress<=inAddress;
+						if unsigned(value1)>unsigned(value2) then
+							StoreValue	<=std_logic_vector(unsigned(value1)-unsigned(value2));
+						else
+							StoreValue 	<=std_logic_vector(to_unsigned(0,32));
+						end if;
 					when MUT|MUTI	=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
@@ -136,9 +149,21 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						tempValue	<=std_logic_vector(unsigned(value1)*unsigned(value2));
+						tempValue	:=std_logic_vector(unsigned(value1)*unsigned(value2));
 						StoreValue	<=tempValue(31 downto 0);
-					when DIV|DIVI	=>
+					when DIV =>
+						Branching 	<= 	'0';
+						toReg		<=	'1';
+						toWrite		<=	'0';
+						toLoad 		<= 	'0';
+						toSwap		<=	'0';
+						StoreAddress<=inAddress;
+						if unsigned(value1) = to_unsigned(0,32)  then
+							StoreValue <=std_logic_vector(to_unsigned(0,32));
+						else
+							StoreValue	<=std_logic_vector(unsigned(value2)/unsigned(value1));
+						end if ;
+					when DIVI =>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
 						toWrite		<=	'0';
@@ -148,9 +173,8 @@ begin
 						if unsigned(value2) = to_unsigned(0,32)  then
 							StoreValue <=std_logic_vector(to_unsigned(0,32));
 						else
-							StoreValue	<=std_logic_vector(unsigned(value2)/unsigned(value1));
+							StoreValue	<=std_logic_vector(unsigned(value1)/unsigned(value2));
 						end if ;
-							
 					when AN|ANDI	=>
 						Branching 	<= 	'0';
 						toReg		<=	'1';

@@ -68,9 +68,9 @@ architecture arch of decode is
 
 	constant storingCycleCount:	integer:=4;
 
-	signal 			Operation:			std_logic_vector(4 downto 0) :="00000";
+	
 	type 			ArrayData			is array (31 downto 0 ) of std_logic_vector(31 downto 0);
-	signal			GPR:				ArrayData;
+	
 	type			IntegerArray		is array (storingCycleCount*2-1 downto 0) of integer;
 	type 			tempIntegerArray	is array (1 downto 0) of integer;
 
@@ -83,6 +83,7 @@ begin
 	variable previousInstruction: std_logic_vector(31 downto 0);
 	variable stallCounter:		integer:=0;
 	variable stalled:			std_logic :='0';
+	variable GPR:				ArrayData;
 	begin
 		
 		if rising_edge(clock) then
@@ -90,7 +91,7 @@ begin
 
 				RequestFetch<= '0';
 
-				GPR 		<=	(others=> (others=>'0'));
+				GPR 		:=	(others=> (others=>'0'));
 				for i in 0 to storingCycleCount*2-1 loop
 					ListOfUsedReg(i) := -1;
 				end loop ; -- checkList	
@@ -108,29 +109,82 @@ begin
 				stalled		:='0';
 			else
 				if RequestUpdate = '1' then
-					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;
+					GPR(to_integer(unsigned(UpdateRegister))) := UpdateRegValue;
 				end if ;
 				if RequestUpdate2 = '1' then
-					GPR(to_integer(unsigned(UpdateRegister2))) <= UpdateRegValue2;
+					GPR(to_integer(unsigned(UpdateRegister2))) := UpdateRegValue2;
 				end if ;
 				if stalled	='1' then
 					
-
+					stallCounter := stallCounter - 1;
 					tempList(0) 	:=	-1;
 					tempList(1)		:=	-1;
 					if stallCounter <=0 then
 						stalled :='0';
+						mode <= previousInstruction(31 downto 27);
+						RequestFetch <= '1';
+						tempList(0) := -1;
+						tempList(1) := -1;
+						outputAddress  <="00000";
+						outputAddress2 <="00000";
+						case( previousInstruction(31 downto 27) ) is
+								
+							when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(21 downto 17);
+								tempList(0) :=	-1;
+								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
+							when SWP =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(21 downto 17);
+								outputAddress2<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
+							when ADDI|SUBI|MUTI|DIVI|ORI|WRT|ANDI 	=>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	std_logic_vector(to_unsigned(0,10)) & previousInstruction(21 downto 0);
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	-1;
+							when INC|DEC|SHL|SHR|NT|BRH 	=>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(26 downto 22);
+								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+								tempList(1) :=	-1;
+							when BEQ|BNE =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	GPR(to_integer(unsigned(previousInstruction(16 downto 12))));
+							when INT =>
+								value1 		<=	std_logic_vector(to_unsigned(0,32));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+							when others =>
+								mode <= NOP;
+								value1 		<=	std_logic_vector(to_unsigned(0,32));
+								value2 		<=	std_logic_vector(to_unsigned(0,32));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+									
+						end case ;
+
 					else
 						mode			<=	"00000";
 						outputAddress  	<=	"00000";
 						outputAddress2 	<=	"00000";
 					end if ;
-					stallCounter := stallCounter - 1;
+					
 				else
 					mode <= fetchedInstruction(31 downto 27);
 					RequestFetch <= '1';
 
-					Operation <= fetchedInstruction(31 downto 27);
+					
 					
 					tempList(0) := -1;
 					tempList(1) := -1;
@@ -143,7 +197,7 @@ begin
 							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
 							value3 		<=	std_logic_vector(to_unsigned(0,32));
 							outputAddress<=fetchedInstruction(21 downto 17);
-							tempList(0) :=	-1;
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
 							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
 						when SWP =>
 							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));

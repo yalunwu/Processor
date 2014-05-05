@@ -4,8 +4,9 @@ use ieee.numeric_std.all;
 
 entity top is
 	port (
-		clock: in	std_logic;
-		reset: in 	std_logic
+		clock: 	in		std_logic;
+		reset: 	in 		std_logic;
+		TX:		out 	std_logic
 		);
 end entity ; -- top
 
@@ -143,6 +144,19 @@ component writeBack
 	UpdateRegValue		:	out	std_logic_vector(31 downto 0);
 	UpdateRegister2		:	out	std_logic_vector(4 downto 0);
 	UpdateRegValue2		:	out	std_logic_vector(31 downto 0)
+  ) ;
+end component;
+component output
+  port (
+	clock:					in 	std_logic;
+	reset:					in	std_logic;
+	requestUpdate		:	in	std_logic;
+	requestUpdate2		:	in	std_logic;
+	UpdateRegister		:	in	std_logic_vector(4 downto 0);
+	UpdateRegValue		:	in	std_logic_vector(31 downto 0);
+	UpdateRegister2		:	in	std_logic_vector(4 downto 0);
+	UpdateRegValue2		:	in	std_logic_vector(31 downto 0);
+	TX:						out std_logic
   ) ;
 end component;
 
@@ -315,6 +329,18 @@ begin
 		UpdateRegister2		=>	UR2,
 		UpdateRegValue2		=>	URV2
 	  ) ;
+	o:output
+	port map(
+		clock				=>	clock,
+		reset 				=>	reset,
+		requestUpdate		=>	RU,
+		requestUpdate2		=>	RU2,
+		UpdateRegister		=>	UR1,
+		UpdateRegValue		=>	URV1,
+		UpdateRegister2		=>	UR2,
+		UpdateRegValue2		=>	URV2,
+		TX					=>	TX
+  	) ;
 	
 
 

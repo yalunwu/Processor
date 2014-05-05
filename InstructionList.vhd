@@ -23,7 +23,7 @@ begin
 				counterValue <= 0;
 			else
 				if stopFlag = '1' then
-					if counterValue >7 then
+					if counterValue >38 then
 						readIn <= "00000000000000000000000000000000";
 					else
 						case( counterValue ) is
