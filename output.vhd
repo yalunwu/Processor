@@ -12,7 +12,8 @@ entity output is
 	UpdateRegValue		:	in	std_logic_vector(31 downto 0);
 	UpdateRegister2		:	in	std_logic_vector(4 downto 0);
 	UpdateRegValue2		:	in	std_logic_vector(31 downto 0);
-	TX:			out std_logic
+	TX:			out std_logic;
+	RX:			in 	std_logic
   ) ;
 end entity ; -- output
 
@@ -40,31 +41,33 @@ component sc_uart
 		RXCLK 	: out std_logic
 		);
 end component;
-		signal		TXDataUART	:	std_logic_vector(31 downto 0)	:=std_logic_vector(to_unsigned(0,32));
+		signal		TXDataUART	:	std_logic_vector(31 downto 0)	;
 		signal		RXDataUART	:	std_logic_vector(31 downto 0)	;
 		signal		rdUART		:	std_logic 						;
-		signal		wrUART		:	std_logic 						:='0';
+
 		signal		rdyCntUART	:	unsigned(1 downto 0)			;
 		signal		txdUART		:	std_logic 						;
 		signal		rxdUART		:	std_logic 						;
 		signal		nctsUART	:	std_logic 						;
 		signal		nrtsUART	:	std_logic 						;
-		signal		resetUART	:	std_logic   					:='0';
+
 		signal 		txCLK:			std_logic;
 		signal 		rxCLK:			std_logic;
 		signal		RXValue:		std_logic;
 		type 		ArrayData			is array (31 downto 0 ) of std_logic_vector(31 downto 0);
 		signal		GPR:	ArrayData;
+		signal		flip:			std_logic_vector(2 downto 0);
+		signal 		counter 	:	unsigned(31 downto 0);
 begin
 	serial:sc_uart 
 	generic map (
 		addr_bits => 2,
-		clk_freq => 50000000,
-		baud_rate => 115200,
-		txf_depth => 32,
-		txf_thres => 32,
-		rxf_depth => 32, 
-		rxf_thres => 32
+		clk_freq => 500000,
+		baud_rate => 9600,
+		txf_depth => 8,
+		txf_thres => 8,
+		rxf_depth => 8, 
+		rxf_thres => 8
 		)
 	port map (
 		clk			=> 	clock,
@@ -77,7 +80,7 @@ begin
 		rdy_cnt		=> 	rdyCntUART,
 
 		txd			=> 	TX,
-		rxd			=> 	'0',
+		rxd			=> 	RX,
 		ncts		=> 	'0',
 		nrts		=>	nrtsUART,
 		TXCLK  		=> 	txCLK,
@@ -88,36 +91,45 @@ begin
 		if rising_edge(clock) then
 			if reset ='1' then
 				GPR 		<=	(others=> (others=>'0'));
+				counter		<=	to_unsigned(0,32);
+				flip 		<=	"000";
 			else
 				if requestUpdate = '1' then
 					GPR(to_integer(unsigned(UpdateRegister))) <= UpdateRegValue;
 				end if ;
 				if requestUpdate2 = '1' then
 					GPR(to_integer(unsigned(UpdateRegister2))) <= UpdateRegValue2;
-				end if ;		
+				end if ;	
+
+				if (txCLK='1') then
+
+					case( flip ) is
+					
+						when "000" =>
+							TXDataUART	<=std_logic_vector(to_unsigned(0,24)) & GPR(to_integer(counter mod 32))(31 downto 24);
+							flip		<="010";
+						when "010" =>
+							TXDataUART	<=std_logic_vector(to_unsigned(0,24)) & GPR(to_integer(counter mod 32))(23 downto 16);
+							flip		<="011";
+						when "011" =>
+							TXDataUART	<=std_logic_vector(to_unsigned(0,24)) & GPR(to_integer(counter mod 32))(15 downto 8);
+							flip		<="100";
+						when "100" =>
+							TXDataUART	<=std_logic_vector(to_unsigned(0,24)) & GPR(to_integer(counter mod 32))(7 downto 0);
+							flip		<="000";
+							counter		<= counter+1;
+
+						when others =>
+							TXDataUART	<=	std_logic_vector(to_unsigned(0,32));
+					end case ;	
+
+				end if;	
+
 			end if ;
+
+
 		end if ;
 	end process ;
-
-	process(txCLK)
-	variable sendData : boolean := false;
-	variable counter  :	integer := 0;
-	begin
-
-		if rising_edge(txCLK) then
-			if(sendData = true) then
-				TXDataUART 	<= GPR(counter);
-				counter :=counter + 1;
-				sendData :=false;
-			else
-				sendData :=true;
-				TXDataUART	<= std_logic_vector(to_unsigned(counter,32));
-			end if;
-			if counter>31 then
-				counter :=0;
-			end if ;
-		end if;	
-	end process;
 
 
 end architecture ; -- arch

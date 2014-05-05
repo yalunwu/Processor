@@ -6,7 +6,8 @@ entity top is
 	port (
 		clock: 	in		std_logic;
 		reset: 	in 		std_logic;
-		TX:		out 	std_logic
+		TX:		out 	std_logic;
+		RX:		in 		std_logic
 		);
 end entity ; -- top
 
@@ -156,7 +157,8 @@ component output
 	UpdateRegValue		:	in	std_logic_vector(31 downto 0);
 	UpdateRegister2		:	in	std_logic_vector(4 downto 0);
 	UpdateRegValue2		:	in	std_logic_vector(31 downto 0);
-	TX:						out std_logic
+	TX:						out std_logic;
+	RX:						in 	std_logic
   ) ;
 end component;
 
@@ -208,11 +210,29 @@ end component;
 	signal 	WR:		std_logic;
 	signal 	RAMV:	std_logic_vector(31 downto 0);
 	signal	RHV:	std_logic;
-
+	signal	clockSlow:	std_logic;
 begin
+	process( clock,reset )
+	variable counter:	integer :=0;
+	begin
+		if rising_edge(clock) then
+
+				if counter = 0 then
+					clockSlow <= '1';
+				elsif counter = 50 then
+					clockSlow <= '0';
+				end if ;
+				counter := counter + 1;
+				if counter = 100 then
+					counter:=0;
+				end if ;
+
+		end if ;
+
+	end process ; -- 
 	IL:InstructionList
 	port map(
-		clock=>clock,
+		clock=>clockSlow,
 		reset=>reset,
 		stopFlag=>RF,
 		programCounter => PC,
@@ -220,7 +240,7 @@ begin
 		);
 	F:fetch
 	port map(
-		clock 				=> clock,
+		clock 				=> clockSlow,
 		reset 				=> reset,
 		readIn 				=>RI,
 		Branched 			=> B,
@@ -232,7 +252,7 @@ begin
 
 	D:decode
 	port map (
-		clock 				=> 	clock,
+		clock 				=> 	clockSlow,
 		reset 				=> 	reset,
 		fetchedInstruction	=>	NI,
 
@@ -256,7 +276,7 @@ begin
 		);
 	 E: execute 
 	  port map (
-		clock				=>	clock, 	 	
+		clock				=>	clockSlow, 	 	
 		reset 				=> 	reset,
 
 		mode				=>	mode,
@@ -283,7 +303,7 @@ begin
 	  ) ;
 	  M:memory 
 	  port map(
-		clock				=> 	clock,
+		clock				=> 	clockSlow,
 		reset 				=> 	reset,
 
 		toReg	 			=>  TR,
@@ -309,7 +329,7 @@ begin
 	);
 	WB:writeBack 
 	 port map (
-		clock				=> 	clock,
+		clock				=> 	clockSlow,
 		reset 				=> 	reset,
 		
 		toSwap				=>	OS,
@@ -331,7 +351,7 @@ begin
 	  ) ;
 	o:output
 	port map(
-		clock				=>	clock,
+		clock				=>	clockSlow,
 		reset 				=>	reset,
 		requestUpdate		=>	RU,
 		requestUpdate2		=>	RU2,
@@ -339,7 +359,8 @@ begin
 		UpdateRegValue		=>	URV1,
 		UpdateRegister2		=>	UR2,
 		UpdateRegValue2		=>	URV2,
-		TX					=>	TX
+		TX					=>	TX,
+		RX 					=>	RX
   	) ;
 	
 

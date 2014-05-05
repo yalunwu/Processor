@@ -199,7 +199,7 @@ begin
 --
 --	serial clock
 --
-	process(clk, reset,tx_clk,rx_clk)
+	process(clk, reset)
 
 		variable clk16		: integer range 0 to clk16_cnt;
 		variable clktx		: unsigned(3 downto 0);

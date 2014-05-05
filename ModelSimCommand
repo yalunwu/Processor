@@ -1,5 +1,25 @@
 force clock 0 0ns, 1 10ns -repeat 20 ns
-force reset 1 -cancel 45ns 
-run 45ns
+force reset 1 -cancel 450ns 
+run 450ns
 force reset 0 
-run 200ns
+run 2000ns
+
+force clock 0 0ns, 1 10ns -repeat 20 ns
+force reset 1 -cancel 1ms 
+run 1ms
+force reset 0 
+run 200ms
+
+		if rising_edge(txCLK) then
+			if(sendData = true) then
+				TXDataUART 	<= GPR(counter);
+				counter :=counter + 1;
+				sendData :=false;
+			else
+				sendData :=true;
+				TXDataUART	<= std_logic_vector(to_unsigned(5,32));
+			end if;
+			if counter>31 then
+				counter :=0;
+			end if ;
+		end if;
