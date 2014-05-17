@@ -64,7 +64,10 @@ architecture arch of decode is
 	constant BRH :		std_logic_vector(4 downto 0) :="11001";
 	constant BEQ :		std_logic_vector(4 downto 0) :="11010";
 	constant BNE :		std_logic_vector(4 downto 0) :="11011";
+
 	constant INT :		std_logic_vector(4 downto 0) :="11100";
+	constant BGE :		std_logic_vector(4 downto 0) :="11101";
+	constant BLE :		std_logic_vector(4 downto 0) :="11110";
 
 	constant storingCycleCount:	integer:=4;
 
@@ -129,9 +132,23 @@ begin
 						outputAddress2 <="00000";
 						case( previousInstruction(31 downto 27) ) is
 								
-							when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+							when MOV|ADD|SUB|MUT|AN|O|NO|XO|STE =>
 								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
 								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(21 downto 17);
+								tempList(0) :=	-1;
+								tempList(1) :=	to_integer(unsigned(previousInstruction(21 downto 17)));
+							when LOD =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value3 		<=	std_logic_vector(to_unsigned(0,32));
+								outputAddress<=previousInstruction(26 downto 22);
+								tempList(0) :=	-1;
+								tempList(1) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
+							When DIV =>
+								value1 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
+								value2 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
 								value3 		<=	std_logic_vector(to_unsigned(0,32));
 								outputAddress<=previousInstruction(21 downto 17);
 								tempList(0) :=	-1;
@@ -158,7 +175,7 @@ begin
 								outputAddress<=previousInstruction(26 downto 22);
 								tempList(0) :=	to_integer(unsigned(previousInstruction(26 downto 22)));
 								tempList(1) :=	-1;
-							when BEQ|BNE =>
+							when BEQ|BNE|BGE|BLE =>
 								value1 		<=	GPR(to_integer(unsigned(previousInstruction(26 downto 22))));
 								value2 		<=	GPR(to_integer(unsigned(previousInstruction(21 downto 17))));
 								value3 		<=	GPR(to_integer(unsigned(previousInstruction(16 downto 12))));
@@ -192,11 +209,18 @@ begin
 					outputAddress2 <="00000";
 					case( fetchedInstruction(31 downto 27) ) is
 							
-						when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|LOD|STE =>
+						when MOV|ADD|SUB|MUT|DIV|AN|O|NO|XO|STE =>
 							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
 							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
 							value3 		<=	std_logic_vector(to_unsigned(0,32));
 							outputAddress<=fetchedInstruction(21 downto 17);
+							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
+							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
+						when LOD =>
+							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
+							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
+							value3 		<=	std_logic_vector(to_unsigned(0,32));
+							outputAddress<=fetchedInstruction(26 downto 22);
 							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
 							tempList(1) :=	to_integer(unsigned(fetchedInstruction(21 downto 17)));
 						when SWP =>
@@ -221,7 +245,7 @@ begin
 							outputAddress<=fetchedInstruction(26 downto 22);
 							tempList(0) :=	to_integer(unsigned(fetchedInstruction(26 downto 22)));
 							tempList(1) :=	-1;
-						when BEQ|BNE =>
+						when BEQ|BNE|BGE|BLE =>
 							value1 		<=	GPR(to_integer(unsigned(fetchedInstruction(26 downto 22))));
 							value2 		<=	GPR(to_integer(unsigned(fetchedInstruction(21 downto 17))));
 							value3 		<=	GPR(to_integer(unsigned(fetchedInstruction(16 downto 12))));
@@ -247,7 +271,7 @@ begin
 								if tempList(j) = ListOfUsedReg(i) and tempList(j)>=0 then
 									RequestFetch<=	'0';
 									stalled		:= 	'1';
-									stallCounter:=	storingCycleCount;
+									stallCounter:=	storingCycleCount+1;
 									previousInstruction :=fetchedInstruction;
 									mode <=NOP;
 								end if ;

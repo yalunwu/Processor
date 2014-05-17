@@ -6,8 +6,8 @@ entity top is
 	port (
 		clock: 	in		std_logic;
 		reset: 	in 		std_logic;
-		TX:		out 	std_logic;
-		RX:		in 		std_logic
+		SW:		in 		std_logic;
+		TX:		out 	std_logic_vector(17 downto 0)
 		);
 end entity ; -- top
 
@@ -17,23 +17,13 @@ component fetch
   port (
 			clock: 				in 	std_logic;
 			reset:	 			in 	std_logic;
-			readIn:				in 	std_logic_vector(31 downto 0);
-
+			
 			Branched:			in  std_logic;
 			BranchLocation:		in  std_logic_vector(31 downto 0);
 
 			RequestFetch:		in 	std_logic;
 			programCounter:		out std_logic_vector(31 downto 0);
 			nextInstruction:	out std_logic_vector(31 downto 0)
-  ) ;
-end component;
-component InstructionList 
- port (
-	clock:			in std_logic;
-	reset:			in std_logic;
-	stopFlag:		in std_logic;
-	programCounter:	in std_logic_vector(31 downto 0);
-	readIn: 		out std_logic_vector(31 downto 0)
   ) ;
 end component;
 
@@ -157,8 +147,8 @@ component output
 	UpdateRegValue		:	in	std_logic_vector(31 downto 0);
 	UpdateRegister2		:	in	std_logic_vector(4 downto 0);
 	UpdateRegValue2		:	in	std_logic_vector(31 downto 0);
-	TX:						out std_logic;
-	RX:						in 	std_logic
+	SW:						in  std_logic;
+	TX:						out std_logic_vector(17 downto 0)
   ) ;
 end component;
 
@@ -230,19 +220,11 @@ begin
 		end if ;
 
 	end process ; -- 
-	IL:InstructionList
-	port map(
-		clock=>clockSlow,
-		reset=>reset,
-		stopFlag=>RF,
-		programCounter => PC,
-		readIn =>RI
-		);
+
 	F:fetch
 	port map(
 		clock 				=> clockSlow,
 		reset 				=> reset,
-		readIn 				=>RI,
 		Branched 			=> B,
 		BranchLocation 		=> BL,
 		RequestFetch		=>RF,
@@ -359,8 +341,8 @@ begin
 		UpdateRegValue		=>	URV1,
 		UpdateRegister2		=>	UR2,
 		UpdateRegValue2		=>	URV2,
-		TX					=>	TX,
-		RX 					=>	RX
+		SW 					=>	SW,
+		TX					=>	TX
   	) ;
 	
 

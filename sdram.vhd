@@ -6,6 +6,7 @@ entity sdpram is
 generic (width : integer := 32; addr_width : integer := 7);
 port (
         wrclk           : in std_logic;
+        reset           : in std_logic;
         data            : in std_logic_vector(width-1 downto 0);
         wraddress       : in std_logic_vector(addr_width-1 downto 0);
         wren            : in std_logic;
@@ -31,6 +32,7 @@ begin
 process (wrclk)
 begin
         if rising_edge(wrclk) then
+
                 if wren='1' then
                         ram(to_integer(unsigned(wraddress))) <= data;
                 end if;

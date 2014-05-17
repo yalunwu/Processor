@@ -1,26 +1,104 @@
 # Reading C:/altera/13.0sp1/modelsim_ase/tcl/vsim/pref.tcl 
-# do fetch_run_msim_gate_vhdl.do 
-# if {[file exists gate_work]} {
-# 	vdel -lib gate_work -all
+# do fetch_run_msim_rtl_vhdl.do 
+# if {[file exists rtl_work]} {
+# 	vdel -lib rtl_work -all
 # }
-# vlib gate_work
-# vmap work gate_work
+# vlib rtl_work
+# vmap work rtl_work
 # Copying C:\altera\13.0sp1\modelsim_ase\win32aloem/../modelsim.ini to modelsim.ini
 # Modifying modelsim.ini
 # ** Warning: Copied C:\altera\13.0sp1\modelsim_ase\win32aloem/../modelsim.ini to modelsim.ini.
 #          Updated modelsim.ini.
 # 
-# vcom -93 -work work {fetch.vho}
+# vcom -93 -work work {D:/Processor/sc_uart.vhd}
 # Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
 # -- Loading package STANDARD
 # -- Loading package TEXTIO
 # -- Loading package std_logic_1164
-# -- Loading package VITAL_Timing
-# -- Loading package VITAL_Primitives
-# -- Loading package cycloneii_atom_pack
-# -- Loading package cycloneii_components
+# -- Loading package NUMERIC_STD
+# -- Compiling entity sc_uart
+# -- Compiling architecture rtl of sc_uart
+# vcom -93 -work work {D:/Processor/output.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity output
+# -- Compiling architecture arch of output
+# vcom -93 -work work {D:/Processor/fifo.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Compiling entity fifo_elem
+# -- Compiling architecture rtl of fifo_elem
+# -- Compiling entity fifo
+# -- Compiling architecture rtl of fifo
+# vcom -93 -work work {D:/Processor/sdram.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity sdpram
+# -- Compiling architecture rtl of sdpram
+# vcom -93 -work work {D:/Processor/top.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
 # -- Compiling entity top
-# -- Compiling architecture structure of top
+# -- Compiling architecture arch of top
+# vcom -93 -work work {D:/Processor/InstructionList.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity InstructionList
+# -- Compiling architecture arch of InstructionList
+# vcom -93 -work work {D:/Processor/writeback.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity writeBack
+# -- Compiling architecture arch of writeback
+# vcom -93 -work work {D:/Processor/memory.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity memory
+# -- Compiling architecture arch of memory
+# vcom -93 -work work {D:/Processor/execute.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity execute
+# -- Compiling architecture arch of execute
+# vcom -93 -work work {D:/Processor/decode.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity decode
+# -- Compiling architecture arch of decode
+# vcom -93 -work work {D:/Processor/fetch.vhd}
+# Model Technology ModelSim ALTERA vcom 10.1d Compiler 2012.11 Nov  2 2012
+# -- Loading package STANDARD
+# -- Loading package TEXTIO
+# -- Loading package std_logic_1164
+# -- Loading package NUMERIC_STD
+# -- Compiling entity fetch
+# -- Compiling architecture arch of fetch
 # 
 vsim -voptargs=+acc gate_work.top
 # vsim -voptargs=+acc gate_work.top 
@@ -35,7 +113,13 @@ vsim -voptargs=+acc gate_work.top
 # Loading cycloneii.cycloneii_lcell_comb(vital_lcell_comb)
 # Loading cycloneii.cycloneii_lcell_ff(vital_lcell_ff)
 # Loading cycloneii.cycloneii_and1(altvital)
+# Loading cycloneii.cycloneii_mac_out(vital_cycloneii_mac_out)
 # Loading ieee.std_logic_arith(body)
+# Loading ieee.std_logic_unsigned(body)
+# Loading cycloneii.cycloneii_mac_mult(vital_cycloneii_mac_mult)
+# Loading cycloneii.cycloneii_mac_data_reg(vital_cycloneii_mac_data_reg)
+# Loading cycloneii.cycloneii_mac_sign_reg(cycloneii_mac_sign_reg)
+# Loading cycloneii.cycloneii_mac_mult_internal(vital_cycloneii_mac_mult_internal)
 # Loading cycloneii.cycloneii_io(structure)
 # Loading cycloneii.cycloneii_mux21(altvital)
 # Loading cycloneii.cycloneii_dffe(behave)
@@ -45,15 +129,3 @@ vsim -voptargs=+acc gate_work.top
 # ** Warning: Design size of 2 instances exceeds ModelSim ALTERA recommended capacity.
 # This may because you are loading cell libraries which are not recommended with
 # the ModelSim Altera version. Expect performance to be adversely affected.
-add wave -position end  sim:/top/clock
-add wave -position end  sim:/top/reset
-add wave -position end  sim:/top/TX
-add wave -position end  sim:/top/RX
-force clock 0 0ns, 1 10ns -repeat 20 ns
-force reset 1 -cancel 45ns 
-run 45ns
-force reset 0 
-run 200ns
-
-run 5ms
-

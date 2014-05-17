@@ -70,13 +70,15 @@ architecture arch of execute is
 	constant BEQ :		std_logic_vector(4 downto 0) :="11010";
 	constant BNE :		std_logic_vector(4 downto 0) :="11011";
 	constant INT :		std_logic_vector(4 downto 0) :="11100";
-	
+	constant BGE :		std_logic_vector(4 downto 0) :="11101";
+	constant BLE :		std_logic_vector(4 downto 0) :="11110";
 begin
 
 
 
-	process( clock )
+	process( clock,reset )
 	variable 	tempValue:	std_logic_vector(63 downto 0);
+
 	begin
 		if rising_edge(clock)  then
 			if reset = '1' then
@@ -151,19 +153,8 @@ begin
 						StoreAddress<=inAddress;
 						tempValue	:=std_logic_vector(unsigned(value1)*unsigned(value2));
 						StoreValue	<=tempValue(31 downto 0);
-					when DIV =>
-						Branching 	<= 	'0';
-						toReg		<=	'1';
-						toWrite		<=	'0';
-						toLoad 		<= 	'0';
-						toSwap		<=	'0';
-						StoreAddress<=inAddress;
-						if unsigned(value1) = to_unsigned(0,32)  then
-							StoreValue <=std_logic_vector(to_unsigned(0,32));
-						else
-							StoreValue	<=std_logic_vector(unsigned(value2)/unsigned(value1));
-						end if ;
-					when DIVI =>
+
+					when DIV|DIVI =>
 						Branching 	<= 	'0';
 						toReg		<=	'1';
 						toWrite		<=	'0';
@@ -214,15 +205,16 @@ begin
 						toLoad 		<= 	'1';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
-						StoreValue	<=value1;
+						StoreValue	<=value2;
 					when STE 		=>
 						Branching 	<= 	'0';
-						toReg		<=	'1';
-						toWrite		<=	'0';
+						toReg		<=	'0';
+						toWrite		<=	'1';
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						StoreAddress<=inAddress;
 						StoreValue	<=value1;
+						StoreValue2	<=value2;
 					when SWP 		=>
 						Branching 	<= 	'0';
 						toReg		<=	'0';
@@ -317,18 +309,43 @@ begin
 						else
 							Branching <='0';
 						end if ;
+					when BGE 		=>
+						toReg		<=	'0';
+						toWrite		<=	'0';
+						toLoad 		<= 	'0';
+						toSwap		<=	'0';
+						if value1 >= value2 then
+						--if tempValue2(0) = '0' then
+							Branching 	<= 	'1';
+							BranchingLocation<=value3;
+						else
+							Branching <='0';
+						end if ;
+					when BLE 		=>
+						toReg		<=	'0';
+						toWrite		<=	'0';
+						toLoad 		<= 	'0';
+						toSwap		<=	'0';
+						if value1 <= value2 then
+						--if tempValue2(0) = '0' then
+							Branching 	<= 	'1';
+							BranchingLocation<=value3;
+						else
+							Branching <='0';
+						end if ;
 					when INT		=>
 						toReg		<=	'0';
 						toWrite		<=	'0';
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
+						Branching 	<=	'0';
 				
 					when others =>
 						toReg		<=	'0';
 						toWrite		<=	'0';
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
-				
+						Branching 	<=	'0';
 				end case ;
 				executeIsReady <='1';
 

@@ -37,6 +37,7 @@ component sdpram
 generic (width : integer := 32; addr_width : integer := 7);
 port (
         wrclk           : in std_logic;
+        reset			: in std_logic;
         data            : in std_logic_vector(width-1 downto 0);
         wraddress       : in std_logic_vector(addr_width-1 downto 0);
         wren            : in std_logic;
@@ -60,6 +61,7 @@ begin
 		) 
 	port map(
 		wrclk 		=>clock,
+		reset		=>reset,
 		data  		=>RAMWriteData,
 		wraddress 	=>RAMWriteAddress,
 		wren		=>RAMWriteEnable,
@@ -87,18 +89,23 @@ begin
 				memoryIsReady <= '0';
 				RAMWriteEnable 	<='0';
 				if toLoad = '1' then
-					RAMReadAddress 	<=StoreValue2(7 downto 0);
+					RAMReadAddress 	<=StoreValue(7 downto 0);
 					RAMHasValue		<='1';
+					
 				elsif toWrite = '1' then
 					RAMHasValue		<='0';
 					RAMWriteEnable 	<='1';
+					
 					RAMWriteAddress <=StoreValue2(7 downto 0);
 					RAMWriteData 	<=StoreValue;
 				elsif toReg ='1' then
 					outReg 		<=	'1';
 					RAMHasValue	<=	'0';
+					RAMWriteEnable 	<='0';
 				else
 					outReg		<=	'0';
+					RAMHasValue	<=	'0';
+					
 				end if ;
 				memoryIsReady <= '1';
 			end if ;

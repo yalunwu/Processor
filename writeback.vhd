@@ -44,17 +44,11 @@ begin
 				UpdateRegister 		<= 	std_logic_vector(to_unsigned(0,5));
 				UpdateRegister2		<= 	std_logic_vector(to_unsigned(0,5));
 			else
-				requestUpdate 		<= '0';
-				requestUpdate2 		<= '0';
 				writebackIsReady 	<= '0';
 				if toReg = '1' then
 					requestUpdate 	<= '1';
 					UpdateRegister 	<=	RegAddress;
-					if RAMHasValue = '1' then
-						UpdateRegValue 	<=	RAMValue;
-					else
-						UpdateRegValue 	<=	RegValue;
-					end if ;
+					UpdateRegValue 	<=	RegValue;
 					
 				elsif toSwap ='1' then
 					requestUpdate 	<= '1';
@@ -63,6 +57,15 @@ begin
 					requestUpdate2 	<= '1';
 					UpdateRegister2	<=	RegAddress2;
 					UpdateRegValue2	<=	RegValue2;
+				elsif RAMHasValue = '1' then
+					requestUpdate 	<= '1';
+					UpdateRegister 	<=	RegAddress;
+					UpdateRegValue 	<=	RAMValue;
+				
+				else
+					requestUpdate 		<= '0';
+					requestUpdate2 		<= '0';
+				
 				end if ;
 				writebackIsReady	<='1';
 						

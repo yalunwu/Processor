@@ -267,3 +267,11 @@ transcript
 *.syn_hier_info
 *.html
 README
+*.vho
+*.sdo
+*.blk1
+*.blk2
+*.blk3
+msim_transcript
+*.xrf
+*.wrk
