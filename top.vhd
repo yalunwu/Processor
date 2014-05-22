@@ -13,11 +13,19 @@ end entity ; -- top
 
 architecture arch of top is
 
+component InstructionList is
+  port (
+  	reset:			in std_logic;
+	programCounter:	in std_logic_vector(31 downto 0);
+	readIn: 		out std_logic_vector(31 downto 0)
+  ) ;
+end component;
+
 component fetch 
   port (
 			clock: 				in 	std_logic;
 			reset:	 			in 	std_logic;
-			
+			readIn:				in std_logic_vector(31 downto 0);
 			Branched:			in  std_logic;
 			BranchLocation:		in  std_logic_vector(31 downto 0);
 
@@ -209,22 +217,30 @@ begin
 
 				if counter = 0 then
 					clockSlow <= '1';
-				elsif counter = 50 then
+				elsif counter = 3 then
 					clockSlow <= '0';
 				end if ;
 				counter := counter + 1;
-				if counter = 100 then
+				if counter = 6 then
 					counter:=0;
 				end if ;
 
 		end if ;
 
-	end process ; -- 
+	end process ;
+
+	IL:InstructionList
+	port map(
+		reset				=> 	reset,
+		programCounter		=>	PC,
+		readIn				=>	RI
+		); 
 
 	F:fetch
 	port map(
 		clock 				=> clockSlow,
 		reset 				=> reset,
+		readIn 				=> RI,
 		Branched 			=> B,
 		BranchLocation 		=> BL,
 		RequestFetch		=>RF,
