@@ -27,7 +27,7 @@ begin
 
 	process(clock,reset)
 	variable			PCounter:			unsigned(31 downto 0);
-	variable			counterValue:		integer;
+
 	begin
 
 		if rising_edge(clock) then
@@ -41,11 +41,9 @@ begin
 				end if ;
 
 			end if ;
-			if PCounter>=to_unsigned(500,32) then
-				PCounter:=to_unsigned(500,32);
+			if PCounter>=to_unsigned(5000000,32) then
+				PCounter:=to_unsigned(5000000,32);
 			end if ;
-			counterValue:=to_integer((PCounter));
-
 			programCounter <=std_logic_vector(PCounter);
 		end if ;
 

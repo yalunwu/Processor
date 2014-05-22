@@ -19,7 +19,7 @@ entity execute is
 	Branching			:	out	std_logic;
 	BranchingLocation	:	out	std_logic_vector(31 downto 0);
 
-
+	interruptFlag		:	out	std_logic;
 	toReg	 			: 	out std_logic;
 	toWrite				:	out std_logic;
 	toLoad				:	out	std_logic;
@@ -97,6 +97,7 @@ begin
 					tempValue	:=	std_logic_vector(to_unsigned(0,64));
 			else
 				executeIsReady <= '0';
+				interruptFlag <='0';
 				case( mode ) is
 					when NOP 		=>
 						Branching 	<= 	'0';
@@ -339,6 +340,7 @@ begin
 						toLoad 		<= 	'0';
 						toSwap		<=	'0';
 						Branching 	<=	'0';
+						interruptFlag<='1';
 				
 					when others =>
 						toReg		<=	'0';

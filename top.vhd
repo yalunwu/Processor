@@ -79,7 +79,7 @@ component execute
 	Branching			:	out	std_logic;
 	BranchingLocation	:	out	std_logic_vector(31 downto 0);
 
-
+	interruptFlag		:	out std_logic;
 	toReg	 			: 	out std_logic;
 	toWrite				:	out std_logic;
 	toLoad				:	out	std_logic;
@@ -208,6 +208,7 @@ end component;
 	signal 	WR:		std_logic;
 	signal 	RAMV:	std_logic_vector(31 downto 0);
 	signal	RHV:	std_logic;
+	signal	interrF:std_logic;
 	signal	clockSlow:	std_logic;
 begin
 	process( clock,reset )
@@ -289,7 +290,7 @@ begin
 		Branching			=>	B,	
 		BranchingLocation	=>	BL,	
 
-
+		interruptFlag		=>	interrF,
 		toReg	 			=> 	TR,
 		toWrite				=>	TW,
 		toLoad				=>	TL,

@@ -13,7 +13,7 @@ end entity ; -- InstructionList
 architecture arch of InstructionList is
 	
 begin
-	process( programCounter)
+	process(reset,programCounter)
 	variable 			counterValue:		integer 	:= 0;
 	variable			PCounter:			unsigned(31 downto 0):=to_unsigned(0,32);
 	begin
